@@ -27,7 +27,6 @@ import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 
 public class Robot extends TimedRobot {
   
@@ -50,11 +49,6 @@ public class Robot extends TimedRobot {
   double rightSpeed;
 
   XboxController xbox = new XboxController(0);
-  JoystickButton button1 = new JoystickButton(xbox, 1);
-  JoystickButton button2 = new JoystickButton(xbox, 2);
-  JoystickButton button3 = new JoystickButton(xbox, 3);
-  JoystickButton button4 = new JoystickButton(xbox, 4);
-  JoystickButton button5 = new JoystickButton(xbox, 5);
 
   //Speed constants for controlling the arm. consider tuning these for your particular robot
   final double armHoldUp = 0.08;
