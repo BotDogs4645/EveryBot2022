@@ -56,7 +56,7 @@ public class Robot extends TimedRobot {
   JoystickButton button4 = new JoystickButton(xbox, 4);
   JoystickButton button5 = new JoystickButton(xbox, 5);
 
-  //Constants for controlling the arm. consider tuning these for your particular robot
+  //Speed constants for controlling the arm. consider tuning these for your particular robot
   final double armHoldUp = 0.08;
   final double armHoldDown = 0.13;
   final double armTravel = 0.5;
@@ -64,7 +64,6 @@ public class Robot extends TimedRobot {
   final double armTimeUp = 0.5;
   final double armTimeDown = 0.35;
 
-  //Varibles needed for the code
   boolean armUp = true; //Arm initialized to up because that's how it would start a match
   boolean burstMode = false;
   double lastBurstTime = 0;
@@ -79,14 +78,15 @@ public class Robot extends TimedRobot {
   NetworkTableEntry tv = table.getEntry("tv");
   NetworkTableEntry ta = table.getEntry("ta");
   NetworkTableEntry ty = table.getEntry("ty");
+  NetworkTableEntry limelightEnabler = table.getEntry("ledMode");
 
   //Limelight tracking variables
   double MIN_ROT_SPEED = .15;
   double ROT_MULTIPLIER = -0.05;
   double LIMELIGHT_HEIGHT = 3.25; // distance from ground in inches
   double GOAL_HEIGHT = 57.5; //in inches
-  
-
+  double LIMELIGHT_ENABLE = 0.0;
+  double LIMELIGHT_DISABLE = 1.0;
 
   /**
    * This function is run when the robot is first started up and should be used for any
@@ -97,7 +97,8 @@ public class Robot extends TimedRobot {
     //Configure motors to turn correct direction. You may have to invert some of your motors
     leftMotors.setInverted(true);
     rightMotors.setInverted(false);
-  
+
+    limelightEnabler.setDouble(LIMELIGHT_DISABLE); // 1.0 forces the limelight off :p
 
     //BurnFlash: For the SPARK MAX to remember its new configuration through a power-cycle, the settings must be saved using. 
     upperLeft.burnFlash();
@@ -106,7 +107,7 @@ public class Robot extends TimedRobot {
     lowerRight.burnFlash();
     
     arm.setInverted(false);
-    //Brake Mode will effectively short all motor wires together
+    //Brake Mode will effectively short all motor wires together = quick stop
     arm.setIdleMode(IdleMode.kBrake);
     arm.burnFlash();
 
@@ -121,6 +122,7 @@ public class Robot extends TimedRobot {
     autoStart = Timer.getFPGATimestamp();
     //check dashboard icon to ensure good to do auto
     goForAuto = SmartDashboard.getBoolean("Go For Auto", false);
+    limelightEnabler.setDouble(LIMELIGHT_ENABLE); // enables limeylight :p
   }
 
   /** This function is called periodically during autonomous. */
@@ -143,12 +145,12 @@ public class Robot extends TimedRobot {
         arm.set(-armHoldUp);
       }
     }
+
     
-    //get time since start of auto
+    //get time in seconds since start of auto
     double autoTimeElapsed = Timer.getFPGATimestamp() - autoStart;
     leftSpeed = -0.3;
     rightSpeed = -0.3;
-    
 
     if(goForAuto){
       //series of timed events making up the flow of auto
@@ -159,7 +161,12 @@ public class Robot extends TimedRobot {
         //stop spitting out the ball and drive backwards *slowly* for three seconds
         intake.set(ControlMode.PercentOutput, 0);
         differentialDriveSub.tankDrive(leftSpeed, rightSpeed);
-
+      } else if (autoTimeElapsed < 9) {
+        if (tv.getDouble(0) == 0.0) {
+          differentialDriveSub.tankDrive(.3, -.3);
+        } else if (tv.getDouble(0) == 1.0 && getDistance() < 6.5 ) {
+          trackObject();
+        }
       } else {
         //do nothing for the rest of auto
         stop();
@@ -169,7 +176,9 @@ public class Robot extends TimedRobot {
 
   /** This function is called once when teleop is enabled. */
   @Override
-  public void teleopInit() {}
+  public void teleopInit() {
+    limelightEnabler.setDouble(2.0);
+  }
 
   /** This function is called periodically during operator control. */
   @Override
@@ -215,13 +224,11 @@ public class Robot extends TimedRobot {
     else if(xbox.getRawButtonPressed(8) && armUp){
       lastBurstTime = Timer.getFPGATimestamp();
       armUp = false;
-    }  
-
+    } 
     //limelight mode
     if(xbox.getRawButtonPressed(3)){
       trackObject();
     }
-
   }
 
   public void stop(){
@@ -230,7 +237,6 @@ public class Robot extends TimedRobot {
     differentialDriveSub.tankDrive(leftSpeed, rightSpeed);
     arm.set(0);
     intake.set(ControlMode.PercentOutput, 0);
-
   }
 
   public void trackObject() {
@@ -251,7 +257,7 @@ public class Robot extends TimedRobot {
     double radians = Math.toRadians(yOffset);
     double distance;
     
-    distance = ((LIMELIGHT_HEIGHT - GOAL_HEIGHT)/Math.tan(radians))/12;
+    distance = ((LIMELIGHT_HEIGHT - GOAL_HEIGHT) / Math.tan(radians)) / 12.0;
     SmartDashboard.putNumber("Distance to Target", distance);
     return distance;
   }
@@ -261,5 +267,6 @@ public class Robot extends TimedRobot {
     //On disable turn off everything
     //done to solve issue with motors "remembering" previous setpoints after reenable
     stop();
+    limelightEnabler.setDouble(0.0);
   }
 }
