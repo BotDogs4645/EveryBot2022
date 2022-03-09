@@ -18,12 +18,13 @@ import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMax.IdleMode;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 
+import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -32,12 +33,12 @@ public class Robot extends TimedRobot {
   
   //Definitions for the hardware. 
   //update port definitions 
-  CANSparkMax upperLeft = new CANSparkMax(1, MotorType.kBrushless);
-  CANSparkMax lowerLeft = new CANSparkMax(2, MotorType.kBrushless);
-  CANSparkMax upperRight = new CANSparkMax(3, MotorType.kBrushless);
-  CANSparkMax lowerRight = new CANSparkMax(4, MotorType.kBrushless);
+  CANSparkMax upperLeft = new CANSparkMax(3, MotorType.kBrushed);
+  CANSparkMax lowerLeft = new CANSparkMax(2, MotorType.kBrushed);
+  CANSparkMax upperRight = new CANSparkMax(5, MotorType.kBrushed);
+  CANSparkMax lowerRight = new CANSparkMax(4, MotorType.kBrushed);
 
-  CANSparkMax arm = new CANSparkMax(5, MotorType.kBrushless);
+  CANSparkMax arm = new CANSparkMax(1, MotorType.kBrushless);
   VictorSPX intake = new VictorSPX(6);
 
   final MotorControllerGroup leftMotors = new MotorControllerGroup(upperLeft, lowerLeft);
@@ -46,17 +47,20 @@ public class Robot extends TimedRobot {
   DifferentialDrive differentialDriveSub = new DifferentialDrive(leftMotors, rightMotors);
 
   double leftSpeed;
-  double rightSpeed;
+  double rotSpeed;
 
-  XboxController xbox = new XboxController(0);
+  SlewRateLimiter speedSlew = new SlewRateLimiter(1.1);
+  SlewRateLimiter rotSpeedSlew = new SlewRateLimiter(1.1);
+
+  Joystick xbox = new Joystick(0);
 
   //Speed constants for controlling the arm. consider tuning these for your particular robot
   final double armHoldUp = 0.08;
   final double armHoldDown = 0.13;
-  final double armTravel = 0.5;
+  final double armTravel = 0.35;
 
   final double armTimeUp = 0.5;
-  final double armTimeDown = 0.35;
+  final double armTimeDown = 0.45;
 
   boolean armUp = true; //Arm initialized to up because that's how it would start a match
   boolean burstMode = false;
@@ -133,7 +137,7 @@ public class Robot extends TimedRobot {
     }
     else {
       if(Timer.getFPGATimestamp() - lastBurstTime < armTimeDown) {
-        arm.set(-armTravel);
+        arm.set(0);
       }
       else{
         arm.set(-armHoldUp);
@@ -144,7 +148,6 @@ public class Robot extends TimedRobot {
     //get time in seconds since start of auto
     double autoTimeElapsed = Timer.getFPGATimestamp() - autoStart;
     leftSpeed = -0.3;
-    rightSpeed = -0.3;
 
     if(goForAuto){
       //series of timed events making up the flow of auto
@@ -154,10 +157,10 @@ public class Robot extends TimedRobot {
       } else if(autoTimeElapsed < 6) {
         //stop spitting out the ball and drive backwards *slowly* for three seconds
         intake.set(ControlMode.PercentOutput, 0);
-        differentialDriveSub.tankDrive(leftSpeed, rightSpeed);
+        differentialDriveSub.arcadeDrive(leftSpeed, 0);
       } else if (autoTimeElapsed < 9) {
         if (tv.getDouble(0) == 0.0) {
-          differentialDriveSub.tankDrive(.3, -.3);
+          differentialDriveSub.arcadeDrive(0, -.3);
         } else if (tv.getDouble(0) == 1.0 && getDistance() < 6.5 ) {
           trackObject();
         }
@@ -177,10 +180,10 @@ public class Robot extends TimedRobot {
   /** This function is called periodically during operator control. */
   @Override
   public void teleopPeriodic() { 
-    leftSpeed = xbox.getLeftY();
-    rightSpeed = xbox.getRightY();
+    leftSpeed = xbox.getX();
+    rotSpeed = xbox.getZ();
     
-    differentialDriveSub.tankDrive(leftSpeed, rightSpeed);
+    differentialDriveSub.arcadeDrive(speedSlew.calculate(leftSpeed), rotSpeedSlew.calculate(rotSpeed));
   
     //Intake controls
     if(xbox.getRawButton(5)) {
@@ -227,8 +230,8 @@ public class Robot extends TimedRobot {
 
   public void stop(){
     leftSpeed = 0;
-    rightSpeed = 0;
-    differentialDriveSub.tankDrive(leftSpeed, rightSpeed);
+    rotSpeed = 0;
+    differentialDriveSub.arcadeDrive(leftSpeed, rotSpeed);
     arm.set(0);
     intake.set(ControlMode.PercentOutput, 0);
   }
