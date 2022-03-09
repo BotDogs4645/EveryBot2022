@@ -183,6 +183,7 @@ public class Robot extends TimedRobot {
     leftSpeed = xbox.getX();
     rotSpeed = xbox.getZ();
     
+    
     differentialDriveSub.arcadeDrive(speedSlew.calculate(leftSpeed), rotSpeedSlew.calculate(rotSpeed));
   
     //Intake controls
