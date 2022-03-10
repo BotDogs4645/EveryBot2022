@@ -25,6 +25,7 @@ import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -47,17 +48,17 @@ public class Robot extends TimedRobot {
   DifferentialDrive differentialDriveSub = new DifferentialDrive(leftMotors, rightMotors);
 
   double leftSpeed;
-  double rotSpeed;
+  double rightSpeed;
 
   SlewRateLimiter speedSlew = new SlewRateLimiter(1.1);
   SlewRateLimiter rotSpeedSlew = new SlewRateLimiter(1.1);
 
-  Joystick xbox = new Joystick(0);
+  XboxController xbox = new XboxController(0);
 
   //Speed constants for controlling the arm. consider tuning these for your particular robot
-  final double armHoldUp = 0.08;
-  final double armHoldDown = 0.13;
-  final double armTravel = 0.35;
+  final double armHoldUp = 0.14;
+  final double armHoldDown = 0.04;
+  final double armTravel = 0.45;
 
   final double armTimeUp = 0.5;
   final double armTimeDown = 0.45;
@@ -147,20 +148,22 @@ public class Robot extends TimedRobot {
     
     //get time in seconds since start of auto
     double autoTimeElapsed = Timer.getFPGATimestamp() - autoStart;
-    leftSpeed = -0.3;
+    leftSpeed = 0.3;
+    rightSpeed = 0.3;
 
     if(goForAuto){
       //series of timed events making up the flow of auto
       if(autoTimeElapsed < 3) {
         //spit out the ball for three seconds
+        differentialDriveSub.tankDrive(leftSpeed, 0);
         intake.set(ControlMode.PercentOutput, -1);
       } else if(autoTimeElapsed < 6) {
         //stop spitting out the ball and drive backwards *slowly* for three seconds
         intake.set(ControlMode.PercentOutput, 0);
-        differentialDriveSub.arcadeDrive(leftSpeed, 0);
+        differentialDriveSub.tankDrive(leftSpeed, 0);
       } else if (autoTimeElapsed < 9) {
         if (tv.getDouble(0) == 0.0) {
-          differentialDriveSub.arcadeDrive(0, -.3);
+          differentialDriveSub.tankDrive(0, -.3);
         } else if (tv.getDouble(0) == 1.0 && getDistance() < 6.5 ) {
           trackObject();
         }
@@ -180,11 +183,11 @@ public class Robot extends TimedRobot {
   /** This function is called periodically during operator control. */
   @Override
   public void teleopPeriodic() { 
-    leftSpeed = xbox.getX();
-    rotSpeed = xbox.getZ();
+    leftSpeed = speedSlew.calculate(xbox.getLeftY());
+    rightSpeed = speedSlew.calculate(xbox.getRightY());
     
     
-    differentialDriveSub.arcadeDrive(speedSlew.calculate(leftSpeed), rotSpeedSlew.calculate(rotSpeed));
+    differentialDriveSub.tankDrive(leftSpeed, rightSpeed);
   
     //Intake controls
     if(xbox.getRawButton(5)) {
@@ -231,8 +234,8 @@ public class Robot extends TimedRobot {
 
   public void stop(){
     leftSpeed = 0;
-    rotSpeed = 0;
-    differentialDriveSub.arcadeDrive(leftSpeed, rotSpeed);
+    rightSpeed = 0;
+    differentialDriveSub.tankDrive(leftSpeed, rightSpeed);
     arm.set(0);
     intake.set(ControlMode.PercentOutput, 0);
   }
