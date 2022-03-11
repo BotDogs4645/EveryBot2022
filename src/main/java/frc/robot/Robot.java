@@ -14,17 +14,15 @@ import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import frc.Constants;
 
 public class Robot extends TimedRobot {
-  
   //Definitions for the hardware. 
   //update port definitions 
-  CANSparkMax upperLeft = new CANSparkMax(3, MotorType.kBrushed);
-  CANSparkMax lowerLeft = new CANSparkMax(2, MotorType.kBrushed);
+  CANSparkMax upperLeft = new CANSparkMax(3, MotorType.kBrushless);
+  CANSparkMax lowerLeft = new CANSparkMax(2, MotorType.kBrushless);
 
-  CANSparkMax upperRight = new CANSparkMax(5, MotorType.kBrushed);
-  CANSparkMax lowerRight = new CANSparkMax(4, MotorType.kBrushed);
+  CANSparkMax upperRight = new CANSparkMax(5, MotorType.kBrushless);
+  CANSparkMax lowerRight = new CANSparkMax(4, MotorType.kBrushless);
 
   CANSparkMax arm = new CANSparkMax(1, MotorType.kBrushless);
   VictorSPX intake = new VictorSPX(6);
