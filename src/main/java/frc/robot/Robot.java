@@ -1,14 +1,3 @@
-/*
-  2022 everybot code
-  written by carson graf 
-  don't email me, @ me on discord
-*/
-
-/*
-  This is catastrophically poorly written code for the sake of being easy to follow
-  If you know what the word "refactor" means, you should refactor this code
-*/
-
 package frc.robot;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
@@ -19,16 +8,13 @@ import com.revrobotics.CANSparkMax.IdleMode;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 
 import edu.wpi.first.math.filter.SlewRateLimiter;
-import edu.wpi.first.networktables.NetworkTable;
-import edu.wpi.first.networktables.NetworkTableEntry;
-import edu.wpi.first.networktables.NetworkTableInstance;
-import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import frc.Constants;
 
 public class Robot extends TimedRobot {
   
@@ -36,6 +22,7 @@ public class Robot extends TimedRobot {
   //update port definitions 
   CANSparkMax upperLeft = new CANSparkMax(3, MotorType.kBrushed);
   CANSparkMax lowerLeft = new CANSparkMax(2, MotorType.kBrushed);
+
   CANSparkMax upperRight = new CANSparkMax(5, MotorType.kBrushed);
   CANSparkMax lowerRight = new CANSparkMax(4, MotorType.kBrushed);
 
@@ -45,23 +32,23 @@ public class Robot extends TimedRobot {
   final MotorControllerGroup leftMotors = new MotorControllerGroup(upperLeft, lowerLeft);
   final MotorControllerGroup rightMotors = new MotorControllerGroup(upperRight, lowerRight); 
 
+  SlewRateLimiter filterLeft = new SlewRateLimiter(2);
+  SlewRateLimiter filterRight = new SlewRateLimiter(2);
+
   DifferentialDrive differentialDriveSub = new DifferentialDrive(leftMotors, rightMotors);
+
+  XboxController driveController = new XboxController(Constants.DriveConstants.DRIVE_CONTROLLER);
 
   double leftSpeed;
   double rightSpeed;
 
-  SlewRateLimiter speedSlew = new SlewRateLimiter(1.1);
-  SlewRateLimiter rotSpeedSlew = new SlewRateLimiter(1.1);
-
-  XboxController xbox = new XboxController(0);
-
   //Speed constants for controlling the arm. consider tuning these for your particular robot
-  final double armHoldUp = 0.14;
-  final double armHoldDown = 0.04;
-  final double armTravel = 0.45;
+  final double armHoldUp = 0.08; // formerly 0.14
+  final double armHoldDown = 0.13; // formerly 0.04;
+  final double armTravel = 0.5; // formerly 0.45;
 
   final double armTimeUp = 0.5;
-  final double armTimeDown = 0.45;
+  final double armTimeDown = 0.35; // formerly 0.45;
 
   boolean armUp = true; //Arm initialized to up because that's how it would start a match
   boolean burstMode = false;
@@ -70,6 +57,7 @@ public class Robot extends TimedRobot {
   double autoStart = 0;
   boolean goForAuto = false;
 
+  /*
   //limelight 
   NetworkTable table = NetworkTableInstance.getDefault().getTable("limelight-console");
 
@@ -86,6 +74,7 @@ public class Robot extends TimedRobot {
   double GOAL_HEIGHT = 57.5; //in inches
   double LIMELIGHT_ENABLE = 0.0;
   double LIMELIGHT_DISABLE = 1.0;
+  */
 
   /**
    * This function is run when the robot is first started up and should be used for any
@@ -97,11 +86,12 @@ public class Robot extends TimedRobot {
     leftMotors.setInverted(true);
     rightMotors.setInverted(false);
 
-    limelightEnabler.setDouble(LIMELIGHT_DISABLE); // 1.0 forces the limelight off :p
+    //limelightEnabler.setDouble(LIMELIGHT_DISABLE); // 1.0 forces the limelight off :p
 
     //BurnFlash: For the SPARK MAX to remember its new configuration through a power-cycle, the settings must be saved using. 
     upperLeft.burnFlash();
     lowerLeft.burnFlash();
+
     upperRight.burnFlash();
     lowerRight.burnFlash();
     
@@ -121,7 +111,7 @@ public class Robot extends TimedRobot {
     autoStart = Timer.getFPGATimestamp();
     //check dashboard icon to ensure good to do auto
     goForAuto = SmartDashboard.getBoolean("Go For Auto", false);
-    limelightEnabler.setDouble(LIMELIGHT_ENABLE); // enables limeylight :p
+    //limelightEnabler.setDouble(LIMELIGHT_ENABLE); // enables limeylight :p
   }
 
   /** This function is called periodically during autonomous. */
@@ -148,26 +138,26 @@ public class Robot extends TimedRobot {
     
     //get time in seconds since start of auto
     double autoTimeElapsed = Timer.getFPGATimestamp() - autoStart;
-    leftSpeed = 0.3;
-    rightSpeed = 0.3;
+
+    leftSpeed = Constants.DriveConstants.SPEED;
+    rightSpeed = Constants.DriveConstants.SPEED;
 
     if(goForAuto){
       //series of timed events making up the flow of auto
       if(autoTimeElapsed < 3) {
         //spit out the ball for three seconds
-        differentialDriveSub.tankDrive(leftSpeed, 0);
         intake.set(ControlMode.PercentOutput, -1);
       } else if(autoTimeElapsed < 6) {
         //stop spitting out the ball and drive backwards *slowly* for three seconds
         intake.set(ControlMode.PercentOutput, 0);
-        differentialDriveSub.tankDrive(leftSpeed, 0);
-      } else if (autoTimeElapsed < 9) {
+        differentialDriveSub.tankDrive(-leftSpeed, -rightSpeed);
+      } /*else if (autoTimeElapsed < 9) {
         if (tv.getDouble(0) == 0.0) {
           differentialDriveSub.tankDrive(0, -.3);
         } else if (tv.getDouble(0) == 1.0 && getDistance() < 6.5 ) {
           trackObject();
         }
-      } else {
+      }*/ else {
         //do nothing for the rest of auto
         stop();
       }
@@ -177,23 +167,25 @@ public class Robot extends TimedRobot {
   /** This function is called once when teleop is enabled. */
   @Override
   public void teleopInit() {
-    limelightEnabler.setDouble(2.0);
+    //limelightEnabler.setDouble(2.0);
   }
 
   /** This function is called periodically during operator control. */
   @Override
   public void teleopPeriodic() { 
-    leftSpeed = speedSlew.calculate(xbox.getLeftY());
-    rightSpeed = speedSlew.calculate(xbox.getRightY());
-    
+    //leftSpeed = filterLeft.calculate(driveController.getLeftY() * -1);
+    //rightSpeed = filterRight.calculate(driveController.getRightY() * -1);
+
+    leftSpeed = driveController.getLeftY() * -1;
+    rightSpeed = driveController.getLeftX() * -1;
     
     differentialDriveSub.tankDrive(leftSpeed, rightSpeed);
   
     //Intake controls
-    if(xbox.getRawButton(5)) {
+    if(driveController.getRawButton(Constants.ButtonConstants.INTAKE_ABSORB)) {
       intake.set(VictorSPXControlMode.PercentOutput, 1);
     }
-    else if(xbox.getRawButton(7)) {
+    else if(driveController.getRawButton(Constants.ButtonConstants.INTAKE_UNABSORB)) {
       intake.set(VictorSPXControlMode.PercentOutput, -1);
     }
     else {
@@ -218,28 +210,30 @@ public class Robot extends TimedRobot {
       }
     }
   
-    if(xbox.getRawButtonPressed(6) && !armUp){
+    if(driveController.getRawButtonPressed(Constants.ButtonConstants.ARM_UP) && !armUp){
       lastBurstTime = Timer.getFPGATimestamp();
       armUp = true;
     }
-    else if(xbox.getRawButtonPressed(8) && armUp){
+    else if(driveController.getRawButtonPressed(Constants.ButtonConstants.ARM_DOWN) && armUp){
       lastBurstTime = Timer.getFPGATimestamp();
       armUp = false;
     } 
+    /*
     //limelight mode
-    if(xbox.getRawButtonPressed(3)){
+    if(driveController.getRawButtonPressed(3)){
       trackObject();
-    }
+    }*/
   }
 
   public void stop(){
     leftSpeed = 0;
     rightSpeed = 0;
     differentialDriveSub.tankDrive(leftSpeed, rightSpeed);
-    arm.set(0);
+    //arm.set(0);
     intake.set(ControlMode.PercentOutput, 0);
   }
 
+  /*
   public void trackObject() {
     double xOffset = -tx.getDouble(0.0);
     SmartDashboard.putNumber("xOffset", xOffset);
@@ -270,4 +264,5 @@ public class Robot extends TimedRobot {
     stop();
     limelightEnabler.setDouble(0.0);
   }
+  */
 }
