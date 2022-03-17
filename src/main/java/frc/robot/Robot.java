@@ -1,14 +1,3 @@
-/*
-  2022 everybot code
-  written by carson graf 
-  don't email me, @ me on discord
-*/
-
-/*
-  This is catastrophically poorly written code for the sake of being easy to follow
-  If you know what the word "refactor" means, you should refactor this code
-*/
-
 package frc.robot;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
@@ -22,11 +11,10 @@ import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 public class Robot extends TimedRobot {
-  
-  //Definitions for the hardware. Change this if you change what stuff you have plugged in
   CANSparkMax driveLeftA = new CANSparkMax(4, MotorType.kBrushed);
   CANSparkMax driveLeftB = new CANSparkMax(5, MotorType.kBrushed);
   CANSparkMax driveRightA = new CANSparkMax(2, MotorType.kBrushed);
@@ -39,14 +27,17 @@ public class Robot extends TimedRobot {
   VictorSPX intake = new VictorSPX(6);
 
   Joystick driverController = new Joystick(0);
+  XboxController buttonController = new XboxController(1);
+
+  double speed;
 
   //Constants for controlling the arm. consider tuning these for your particular robot
   final double armHoldUp = 0.14;
   final double armHoldDown = 0.05;
   final double armTravel = 0.5;
 
-  final double armTimeUp = 0.5;
-  final double armTimeDown = 0.35;
+  final double armTimeUp = 0.4;
+  final double armTimeDown = 0.4;
 
   //Varibles needed for the code
   boolean armUp = true; //Arm initialized to up because that's how it would start a match
@@ -54,13 +45,8 @@ public class Robot extends TimedRobot {
   double lastBurstTime = 0;
 
   double autoStart = 0;
-  boolean goForAuto = false;
+  boolean goForAuto = true;
 
-
-  /**
-   * This function is run when the robot is first started up and should be used for any
-   * initialization code.
-   */
   @Override
   public void robotInit() {
     //Configure motors to turn correct direction. You may have to invert some of your motors
@@ -78,8 +64,8 @@ public class Robot extends TimedRobot {
     arm.burnFlash();
 
     //add a thing on the dashboard to turn off auto if needed
-    SmartDashboard.putBoolean("Go For Auto", false);
-    goForAuto = SmartDashboard.getBoolean("Go For Auto", false);
+    SmartDashboard.putBoolean("Go For Auto", true);
+    goForAuto = SmartDashboard.getBoolean("Go For Auto", true);
   }
 
   @Override
@@ -87,7 +73,7 @@ public class Robot extends TimedRobot {
     //get a time for auton start to do events based on time later
     autoStart = Timer.getFPGATimestamp();
     //check dashboard icon to ensure good to do auto
-    goForAuto = SmartDashboard.getBoolean("Go For Auto", false);
+    goForAuto = SmartDashboard.getBoolean("Go For Auto", true);
   }
 
   /** This function is called periodically during autonomous. */
@@ -113,19 +99,22 @@ public class Robot extends TimedRobot {
     
     //get time since start of auto
     double autoTimeElapsed = Timer.getFPGATimestamp() - autoStart;
+    
+    speed = Constants.DriveConstants.SPEED;
+
     if(goForAuto){
       //series of timed events making up the flow of auto
       if(autoTimeElapsed < 3){
         //spit out the ball for three seconds
-        intake.set(ControlMode.PercentOutput, -1);
+        intake.set(ControlMode.PercentOutput, -1); // U N A B S O R B
       }else if(autoTimeElapsed < 6){
         //stop spitting out the ball and drive backwards *slowly* for three seconds
         intake.set(ControlMode.PercentOutput, 0);
-        driveLeftA.set(-0.3);
-        driveLeftB.set(-0.3);
-        driveRightA.set(-0.3);
-        driveRightB.set(-0.3);
-      }else{
+        driveLeftA.set(-speed);
+        driveLeftB.set(-speed);
+        driveRightA.set(-speed);
+        driveRightB.set(-speed);
+      } else {
         //do nothing for the rest of auto
         intake.set(ControlMode.PercentOutput, 0);
         driveLeftA.set(0);
@@ -159,19 +148,14 @@ public class Robot extends TimedRobot {
     driveRightA.set(rightJoy.calculate(driveRightPower));
     driveRightB.set(rightJoy.calculate(driveRightPower));
 
-    //driveRightA.set(driveRightPower);
-    //driveRightB.set(driveRightPower);
-    //driveLeftA.setVoltage(driveLeftPower);
-    //driveLeftB.setVoltage(driveLeftPower);
-    //driveRightA.setVoltage(driveRightPower);
-    //driveRightB.setVoltage(driveRightPower);
-
     //Intake controls
-    if(driverController.getRawButton(4)){ // A B S O R B
+    if(buttonController.getRawButton(Constants.ButtonConstants.INTAKE_ABSORB)) { // A B S O R B
       intake.set(VictorSPXControlMode.PercentOutput, 1);
+      SmartDashboard.putBoolean("Absorb?", true);
     }
-    else if(driverController.getRawButton(6)){ // U N A B S O R B
+    else if(buttonController.getRawButton(Constants.ButtonConstants.INTAKE_UNABSORB)){ // U N A B S O R B
       intake.set(VictorSPXControlMode.PercentOutput, -1);
+      SmartDashboard.putBoolean("Absorb?", false);
     }
     else{
       intake.set(VictorSPXControlMode.PercentOutput, 0);
@@ -188,28 +172,27 @@ public class Robot extends TimedRobot {
     }
     else{
       if(Timer.getFPGATimestamp() - lastBurstTime < armTimeDown){
-        arm.set(0);
+        arm.set(0.075);
       }
       else{
         arm.set(-armHoldDown);
       }
     }
   
-    if(driverController.getRawButtonPressed(5) && !armUp){ // ARM UP
+    if(buttonController.getRawButtonPressed(Constants.ButtonConstants.ARM_UP) && !armUp) { // ARM UP
       lastBurstTime = Timer.getFPGATimestamp();
       armUp = true;
+      SmartDashboard.putBoolean("arm up", armUp);
     }
-    else if(driverController.getRawButtonPressed(3) && armUp){ // ARM DOWN
+    else if(buttonController.getRawButtonPressed(Constants.ButtonConstants.ARM_DOWN) && armUp) { // ARM DOWN
       lastBurstTime = Timer.getFPGATimestamp();
       armUp = false;
+      SmartDashboard.putBoolean("arm up", armUp);
     }  
-
   }
 
   @Override
   public void disabledInit() {
-    //On disable turn off everything
-    //done to solve issue with motors "remembering" previous setpoints after reenable
     driveLeftA.set(0);
     driveLeftB.set(0);
     driveRightA.set(0);
@@ -217,5 +200,4 @@ public class Robot extends TimedRobot {
     arm.set(0);
     intake.set(ControlMode.PercentOutput, 0);
   }
-    
 }
