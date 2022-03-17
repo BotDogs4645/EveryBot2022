@@ -32,8 +32,8 @@ public class Robot extends TimedRobot {
   CANSparkMax driveRightA = new CANSparkMax(2, MotorType.kBrushed);
   CANSparkMax driveRightB = new CANSparkMax(3, MotorType.kBrushed);
 
-  SlewRateLimiter leftJoy = new SlewRateLimiter(1.1);
-  SlewRateLimiter rightJoy = new SlewRateLimiter(1.1);
+  SlewRateLimiter leftJoy = new SlewRateLimiter(2);
+  SlewRateLimiter rightJoy = new SlewRateLimiter(2);
 
   CANSparkMax arm = new CANSparkMax(1, MotorType.kBrushless);
   VictorSPX intake = new VictorSPX(6);
