@@ -162,7 +162,7 @@ public class Robot extends TimedRobot {
     }
 
     SmartDashboard.putBoolean("toggle", toggleLimit);
-    SmartDashboard.putNumber("limit", limit);
+    SmartDashboard.putNumber("limit", limit); 
 
     //Set up arcade steer
     double forward = -driverController.getY() * limit;
