@@ -34,9 +34,10 @@ public class Robot extends TimedRobot {
   double limit;
 
   //Constants for controlling the arm. consider tuning these for your particular robot
-  static double armHoldUp = 0.13; // 0.08
+  double armHoldUp = 0.13; // 0.08
   final double armHoldDown = 0.05; // 0.13
-  final double armTravel = 0.25; //0.4 too slow 
+  final double armTravel = 0.25;
+  final double climberArmTravel = 0.4;
 
   final double armTimeUp = 0.5;
   final double armTimeDown = 0.35;
@@ -125,17 +126,21 @@ public class Robot extends TimedRobot {
   /** This function is called periodically during operator control. */
   @Override
   public void teleopPeriodic() {
-    // CLIMBING:
+   // CLIMBING:
+   if (driverController.getRawButtonPressed(2)) { // arm climber button
     climbStartTime = Timer.getFPGATimestamp();
-    boolean armButton = driverController.getRawButtonPressed(2);
-    if (armButton) {
-      if((climbStartTime - Timer.getFPGATimestamp()) > 0.30) {
-        arm.set(armTravel);
+    if(armUp){ //if arm is up, move down a 1/3
+      if((Timer.getFPGATimestamp() - climbStartTime) < 0.42) { 
+        arm.set(climberArmTravel);
       }
-      else {
-        arm.set(armHoldUp);
-      }  
+      else{ //if arm is down
+        if((Timer.getFPGATimestamp() - climbStartTime) < 0.42) { 
+          arm.set(-climberArmTravel);
+        }
+
+      }
     }
+}
 
     SmartDashboard.putBoolean("toggle", climberArm);
     SmartDashboard.putNumber("limit", limit); 
