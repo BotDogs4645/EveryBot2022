@@ -47,6 +47,7 @@ public class Robot extends TimedRobot {
   boolean armUp = true; //Arm initialized to up because that's how it would start a match FALSE?
   boolean burstMode = false;
   double lastBurstTime = 0;
+  double climbStartTime = 0;
 
   double autoStart = 0;
   boolean goForAuto = true;
@@ -136,23 +137,29 @@ public class Robot extends TimedRobot {
 
   /** This function is called once when teleop is enabled. */
   @Override
-  public void teleopInit() {}
+  public void teleopInit() {
+  }
 
   /** This function is called periodically during operator control. */
   @Override
   public void teleopPeriodic() {
     // CLIMBING:
     if (driverController.getRawButtonPressed(Constants.ButtonConstants.TOGGLE_LIMIT)) {
+      climbStartTime = Timer.getFPGATimestamp();
       if (!toggleLimit) {
         // Current state is false so turn on
-        limit = Constants.DriveConstants.CLIMB_LIMIT;
+        // limit = Constants.DriveConstants.CLIMB_LIMIT;
+        if((Timer.getFPGATimestamp() - climbStartTime) < 0.2) {
+          arm.set(armTravel);
+        }
         toggleLimit = true;
       } else {
         // Current state is true so turn off
-        limit = Constants.DriveConstants.SPEED_LIMIT;
-        toggleLimit = false;
-      }
-   }
+        // limit = Constants.DriveConstants.SPEED_LIMIT;
+          arm.set(-0.4);
+          toggleLimit = false;
+        }
+    }
 
     SmartDashboard.putBoolean("toggle", toggleLimit);
     SmartDashboard.putNumber("limit", limit);
