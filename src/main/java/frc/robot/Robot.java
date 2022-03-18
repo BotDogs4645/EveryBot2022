@@ -23,7 +23,6 @@ public class Robot extends TimedRobot {
   SlewRateLimiter leftJoy = new SlewRateLimiter(2);
   SlewRateLimiter rightJoy = new SlewRateLimiter(2);
 
-
   CANSparkMax arm = new CANSparkMax(1, MotorType.kBrushless);
 
   VictorSPX intake = new VictorSPX(6);
@@ -87,6 +86,7 @@ public class Robot extends TimedRobot {
   /** This function is called periodically during autonomous. */
   @Override
   public void autonomousPeriodic() {
+    
     /*
     //arm control code. same as in teleop
     if(armUp){
@@ -222,6 +222,7 @@ public class Robot extends TimedRobot {
       SmartDashboard.putBoolean("arm up", armUp);
     }  
   }
+
 
   @Override
   public void disabledInit() {
