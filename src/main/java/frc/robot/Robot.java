@@ -34,15 +34,15 @@ public class Robot extends TimedRobot {
   double limit;
 
   //Constants for controlling the arm. consider tuning these for your particular robot
-  final double armHoldUp = 0.11; // 0.08
+  static double armHoldUp = 0.13; // 0.08
   final double armHoldDown = 0.05; // 0.13
-  final double armTravel = 0.4; 
+  final double armTravel = 0.25; //0.4 too slow 
 
   final double armTimeUp = 0.5;
   final double armTimeDown = 0.35;
 
   //Variables needed for the code
-  boolean toggleLimit = false; // changes when button is pressed (for climbing)
+  boolean climberArm = false; // changes when button is pressed (for climbing)
   boolean armUp = true; //Arm initialized to up because that's how it would start a match FALSE?
   boolean burstMode = false;
   boolean armTravelFlag = false;
@@ -68,7 +68,7 @@ public class Robot extends TimedRobot {
     arm.setIdleMode(IdleMode.kBrake);
     arm.burnFlash();
 
-    toggleLimit = false;
+    climberArm = false;
     limit = Constants.DriveConstants.SPEED_LIMIT;
 
     //add a thing on the dashboard to turn off auto if needed
@@ -87,26 +87,6 @@ public class Robot extends TimedRobot {
   /** This function is called periodically during autonomous. */
   @Override
   public void autonomousPeriodic() {
-    
-    /*
-    //arm control code. same as in teleop
-    if(armUp){
-      if(Timer.getFPGATimestamp() - lastBurstTime < armTimeUp){
-        arm.set(armTravel); // -armTravel
-      }
-      else{
-        arm.set(armHoldUp); // -armHoldUp
-      }
-    }
-    else{
-      if(Timer.getFPGATimestamp() - lastBurstTime < armTimeDown){
-        arm.set(-armTravel); // armTravel
-      }
-      else{
-        arm.set(-armHoldUp); // armTravel
-      }
-    }
-    */
 
     //get time since start of auto
     double autoTimeElapsed = Timer.getFPGATimestamp() - autoStart;
@@ -139,33 +119,25 @@ public class Robot extends TimedRobot {
   /** This function is called once when teleop is enabled. */
   @Override
   public void teleopInit() {
+    armHoldUp = 0.11;
   }
 
   /** This function is called periodically during operator control. */
   @Override
   public void teleopPeriodic() {
     // CLIMBING:
-    if (driverController.getRawButtonPressed(Constants.ButtonConstants.TOGGLE_LIMIT)) {
-      climbStartTime = Timer.getFPGATimestamp();
-      if (!toggleLimit) {
-        // Current state is false so turn on
-        if((Timer.getFPGATimestamp() - climbStartTime) < 0.35) {
-          arm.set(armTravel);
-          armTravelFlag = true;
-        }
-        if(armTravelFlag) {
-          arm.set(armHoldUp);
-        }
-        toggleLimit = true;
-      } else {
-        // Current state is true so turn off
-          arm.set(-armTimeDown);
-          toggleLimit = false;
-          armTravelFlag = false;
-        }
+    climbStartTime = Timer.getFPGATimestamp();
+    boolean armButton = driverController.getRawButtonPressed(2);
+    if (armButton) {
+      if((climbStartTime - Timer.getFPGATimestamp()) > 0.30) {
+        arm.set(armTravel);
+      }
+      else {
+        arm.set(armHoldUp);
+      }  
     }
 
-    SmartDashboard.putBoolean("toggle", toggleLimit);
+    SmartDashboard.putBoolean("toggle", climberArm);
     SmartDashboard.putNumber("limit", limit); 
 
     //Set up arcade steer
@@ -225,6 +197,7 @@ public class Robot extends TimedRobot {
       armUp = false;
       SmartDashboard.putBoolean("arm up", armUp);
     }  
+
   }
 
 

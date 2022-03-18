@@ -20,6 +20,6 @@ public final class Constants {
         public static final int ARM_DOWN = 1;
 
         //CLIMBING
-        public static final int TOGGLE_LIMIT = 2; // on joystick
+        public static final int CLIMBER_ARM = 2; // on joystick
     }
 }
