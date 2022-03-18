@@ -30,6 +30,7 @@ public class Robot extends TimedRobot {
   XboxController buttonController = new XboxController(1);
 
   double speed;
+  double limit;
 
   //Constants for controlling the arm. consider tuning these for your particular robot
   final double armHoldUp = 0.11; // 0.08
@@ -40,6 +41,7 @@ public class Robot extends TimedRobot {
   final double armTimeDown = 0.35;
 
   //Variables needed for the code
+  boolean toggleLimit = false; // changes when button is pressed (for climbing)
   boolean armUp = true; //Arm initialized to up because that's how it would start a match FALSE?
   boolean burstMode = false;
   double lastBurstTime = 0;
@@ -62,6 +64,9 @@ public class Robot extends TimedRobot {
     arm.setInverted(false);
     arm.setIdleMode(IdleMode.kBrake);
     arm.burnFlash();
+
+    toggleLimit = false;
+    limit = Constants.DriveConstants.SPEED_LIMIT;
 
     //add a thing on the dashboard to turn off auto if needed
     SmartDashboard.putBoolean("Go For Auto", true);
@@ -108,17 +113,17 @@ public class Robot extends TimedRobot {
       //series of timed events making up the flow of auto
       if(autoTimeElapsed < 3){
         //spit out the ball for three seconds
-        intake.set(ControlMode.PercentOutput, -1); // U N A B S O R B (-1)
+        intake.set(ControlMode.PercentOutput, 1); // U N A B S O R B 
       }else if(autoTimeElapsed < 5){
         //stop spitting out the ball and drive backwards *slowly* for two seconds
-        //intake.set(ControlMode.PercentOutput, 1); // 1
+        intake.set(ControlMode.PercentOutput, 0); // 1
         driveLeftA.set(-speed);
         driveLeftB.set(-speed);
         driveRightA.set(-speed);
         driveRightB.set(-speed);
       } else {
         //do nothing for the rest of auto
-        //intake.set(ControlMode.PercentOutput, 0);
+        intake.set(ControlMode.PercentOutput, 0);
         driveLeftA.set(0);
         driveLeftB.set(0);
         driveRightA.set(0);
@@ -134,9 +139,25 @@ public class Robot extends TimedRobot {
   /** This function is called periodically during operator control. */
   @Override
   public void teleopPeriodic() {
+    // CLIMBING:
+    if (driverController.getRawButtonPressed(Constants.ButtonConstants.TOGGLE_LIMIT)) {
+      if (!toggleLimit) {
+        // Current state is false so turn on
+        limit = Constants.DriveConstants.CLIMB_LIMIT;
+        toggleLimit = true;
+      } else {
+        // Current state is true so turn off
+        limit = Constants.DriveConstants.SPEED_LIMIT;
+        toggleLimit = false;
+      }
+   }
+
+    SmartDashboard.putBoolean("toggle", toggleLimit);
+    SmartDashboard.putNumber("limit", limit);
+
     //Set up arcade steer
-    double forward = -driverController.getY() * 0.8;
-    double turn = -driverController.getZ() * 0.8;
+    double forward = -driverController.getY() * limit;
+    double turn = -driverController.getZ() * limit;
     
     double driveLeftPower = (forward - turn);
     double driveRightPower = (forward + turn);
@@ -174,7 +195,7 @@ public class Robot extends TimedRobot {
     }
     else{
       if(Timer.getFPGATimestamp() - lastBurstTime < armTimeDown){
-        arm.set(0);
+        arm.set(-0.4);
       }
       else{
         arm.set(-armHoldDown);
