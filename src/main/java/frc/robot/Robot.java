@@ -20,8 +20,8 @@ public class Robot extends TimedRobot {
   CANSparkMax driveRightA = new CANSparkMax(2, MotorType.kBrushed);
   CANSparkMax driveRightB = new CANSparkMax(3, MotorType.kBrushed);
 
-  SlewRateLimiter leftJoy = new SlewRateLimiter(1.5);
-  SlewRateLimiter rightJoy = new SlewRateLimiter(1.5);
+  SlewRateLimiter leftJoy = new SlewRateLimiter(2);
+  SlewRateLimiter rightJoy = new SlewRateLimiter(2);
 
   CANSparkMax arm = new CANSparkMax(1, MotorType.kBrushless);
   VictorSPX intake = new VictorSPX(6);
@@ -30,6 +30,7 @@ public class Robot extends TimedRobot {
   XboxController buttonController = new XboxController(1);
 
   double speed;
+  double limit = 0.8;
 
   //Constants for controlling the arm. consider tuning these for your particular robot
   final double armHoldUp = 0.11; // 0.08
@@ -79,6 +80,7 @@ public class Robot extends TimedRobot {
   /** This function is called periodically during autonomous. */
   @Override
   public void autonomousPeriodic() {
+    
     /*
     //arm control code. same as in teleop
     if(armUp){
@@ -106,19 +108,19 @@ public class Robot extends TimedRobot {
 
     if(goForAuto){
       //series of timed events making up the flow of auto
-      if(autoTimeElapsed < 3){
-        //spit out the ball for three seconds
-        intake.set(ControlMode.PercentOutput, -1); // U N A B S O R B (-1)
-      }else if(autoTimeElapsed < 5){
-        //stop spitting out the ball and drive backwards *slowly* for two seconds
-        //intake.set(ControlMode.PercentOutput, 1); // 1
+      if(autoTimeElapsed < 2){
+        //spit out the ball for two seconds
+        intake.set(ControlMode.PercentOutput,4); // U N A B S O R B (-1)
+       }else if(autoTimeElapsed < 6){
+      //   //stop spitting out the ball and drive backwards *slowly* for two seconds
+        intake.set(ControlMode.PercentOutput, 0); // 1
         driveLeftA.set(-speed);
         driveLeftB.set(-speed);
         driveRightA.set(-speed);
         driveRightB.set(-speed);
       } else {
         //do nothing for the rest of auto
-        //intake.set(ControlMode.PercentOutput, 0);
+        intake.set(ControlMode.PercentOutput, 0);
         driveLeftA.set(0);
         driveLeftB.set(0);
         driveRightA.set(0);
@@ -135,8 +137,8 @@ public class Robot extends TimedRobot {
   @Override
   public void teleopPeriodic() {
     //Set up arcade steer
-    double forward = -driverController.getY() * 0.8;
-    double turn = -driverController.getZ() * 0.8;
+    double forward = -driverController.getY() * limit;
+    double turn = -driverController.getZ() * limit;
     
     double driveLeftPower = (forward - turn);
     double driveRightPower = (forward + turn);
@@ -174,7 +176,7 @@ public class Robot extends TimedRobot {
     }
     else{
       if(Timer.getFPGATimestamp() - lastBurstTime < armTimeDown){
-        arm.set(0);
+        arm.set(-0.4);
       }
       else{
         arm.set(-armHoldDown);
@@ -192,6 +194,7 @@ public class Robot extends TimedRobot {
       SmartDashboard.putBoolean("arm up", armUp);
     }  
   }
+
 
   @Override
   public void disabledInit() {
