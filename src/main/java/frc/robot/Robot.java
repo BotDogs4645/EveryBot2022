@@ -34,13 +34,13 @@ public class Robot extends TimedRobot {
   //Constants for controlling the arm. consider tuning these for your particular robot
   final double armHoldUp = 0.11; // 0.08
   final double armHoldDown = 0.05; // 0.13
-  final double armTravel = 0.4; // 0.5
+  final double armTravel = 0.4; 
 
   final double armTimeUp = 0.5;
   final double armTimeDown = 0.35;
 
   //Variables needed for the code
-  boolean armUp = true; //Arm initialized to up because that's how it would start a match
+  boolean armUp = true; //Arm initialized to up because that's how it would start a match FALSE?
   boolean burstMode = false;
   double lastBurstTime = 0;
 
@@ -83,18 +83,18 @@ public class Robot extends TimedRobot {
     //arm control code. same as in teleop
     if(armUp){
       if(Timer.getFPGATimestamp() - lastBurstTime < armTimeUp){
-        arm.set(armTravel);
+        arm.set(armTravel); // -armTravel
       }
       else{
-        arm.set(armHoldUp);
+        arm.set(armHoldUp); // -armHoldUp
       }
     }
     else{
       if(Timer.getFPGATimestamp() - lastBurstTime < armTimeDown){
-        arm.set(-armTravel);
+        arm.set(-armTravel); // armTravel
       }
       else{
-        arm.set(-armHoldUp);
+        arm.set(-armHoldUp); // armTravel
       }
     }
     */
