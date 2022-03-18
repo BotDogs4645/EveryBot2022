@@ -24,6 +24,7 @@ public class Robot extends TimedRobot {
   SlewRateLimiter rightJoy = new SlewRateLimiter(2);
 
   CANSparkMax arm = new CANSparkMax(1, MotorType.kBrushless);
+
   VictorSPX intake = new VictorSPX(6);
 
   Joystick driverController = new Joystick(0);
