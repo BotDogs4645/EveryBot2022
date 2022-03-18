@@ -20,8 +20,8 @@ public class Robot extends TimedRobot {
   CANSparkMax driveRightA = new CANSparkMax(2, MotorType.kBrushed);
   CANSparkMax driveRightB = new CANSparkMax(3, MotorType.kBrushed);
 
-  SlewRateLimiter leftJoy = new SlewRateLimiter(2);
-  SlewRateLimiter rightJoy = new SlewRateLimiter(2);
+  SlewRateLimiter leftJoy = new SlewRateLimiter(1.5);
+  SlewRateLimiter rightJoy = new SlewRateLimiter(1.5);
 
   CANSparkMax arm = new CANSparkMax(1, MotorType.kBrushless);
   VictorSPX intake = new VictorSPX(6);
@@ -32,14 +32,14 @@ public class Robot extends TimedRobot {
   double speed;
 
   //Constants for controlling the arm. consider tuning these for your particular robot
-  final double armHoldUp = 0.14;
-  final double armHoldDown = 0.05;
-  final double armTravel = 0.5;
+  final double armHoldUp = 0.11; // 0.08
+  final double armHoldDown = 0.05; // 0.13
+  final double armTravel = 0.4; // 0.5
 
-  final double armTimeUp = 0.4;
-  final double armTimeDown = 0.4;
+  final double armTimeUp = 0.5;
+  final double armTimeDown = 0.35;
 
-  //Varibles needed for the code
+  //Variables needed for the code
   boolean armUp = true; //Arm initialized to up because that's how it would start a match
   boolean burstMode = false;
   double lastBurstTime = 0;
@@ -79,6 +79,7 @@ public class Robot extends TimedRobot {
   /** This function is called periodically during autonomous. */
   @Override
   public void autonomousPeriodic() {
+    /*
     //arm control code. same as in teleop
     if(armUp){
       if(Timer.getFPGATimestamp() - lastBurstTime < armTimeUp){
@@ -96,7 +97,8 @@ public class Robot extends TimedRobot {
         arm.set(-armHoldUp);
       }
     }
-    
+    */
+
     //get time since start of auto
     double autoTimeElapsed = Timer.getFPGATimestamp() - autoStart;
     
@@ -106,17 +108,17 @@ public class Robot extends TimedRobot {
       //series of timed events making up the flow of auto
       if(autoTimeElapsed < 3){
         //spit out the ball for three seconds
-        intake.set(ControlMode.PercentOutput, -1); // U N A B S O R B
-      }else if(autoTimeElapsed < 6){
-        //stop spitting out the ball and drive backwards *slowly* for three seconds
-        intake.set(ControlMode.PercentOutput, 0);
+        intake.set(ControlMode.PercentOutput, -1); // U N A B S O R B (-1)
+      }else if(autoTimeElapsed < 5){
+        //stop spitting out the ball and drive backwards *slowly* for two seconds
+        //intake.set(ControlMode.PercentOutput, 1); // 1
         driveLeftA.set(-speed);
         driveLeftB.set(-speed);
         driveRightA.set(-speed);
         driveRightB.set(-speed);
       } else {
         //do nothing for the rest of auto
-        intake.set(ControlMode.PercentOutput, 0);
+        //intake.set(ControlMode.PercentOutput, 0);
         driveLeftA.set(0);
         driveLeftB.set(0);
         driveRightA.set(0);
@@ -150,11 +152,11 @@ public class Robot extends TimedRobot {
 
     //Intake controls
     if(buttonController.getRawButton(Constants.ButtonConstants.INTAKE_ABSORB)) { // A B S O R B
-      intake.set(VictorSPXControlMode.PercentOutput, 1);
+      intake.set(VictorSPXControlMode.PercentOutput, -1); 
       SmartDashboard.putBoolean("Absorb?", true);
     }
     else if(buttonController.getRawButton(Constants.ButtonConstants.INTAKE_UNABSORB)){ // U N A B S O R B
-      intake.set(VictorSPXControlMode.PercentOutput, -1);
+      intake.set(VictorSPXControlMode.PercentOutput, 1); 
       SmartDashboard.putBoolean("Absorb?", false);
     }
     else{
@@ -172,7 +174,7 @@ public class Robot extends TimedRobot {
     }
     else{
       if(Timer.getFPGATimestamp() - lastBurstTime < armTimeDown){
-        arm.set(0.075);
+        arm.set(0);
       }
       else{
         arm.set(-armHoldDown);
