@@ -45,6 +45,7 @@ public class Robot extends TimedRobot {
   boolean toggleLimit = false; // changes when button is pressed (for climbing)
   boolean armUp = true; //Arm initialized to up because that's how it would start a match FALSE?
   boolean burstMode = false;
+  boolean armTravelFlag = false;
   double lastBurstTime = 0;
   double climbStartTime = 0;
 
@@ -117,8 +118,8 @@ public class Robot extends TimedRobot {
       if(autoTimeElapsed < 3){
         //spit out the ball for three seconds
         intake.set(ControlMode.PercentOutput, 1); // U N A B S O R B 
-      }else if(autoTimeElapsed < 5){
-        //stop spitting out the ball and drive backwards *slowly* for two seconds
+      }else if(autoTimeElapsed < 7){
+        //stop spitting out the ball and drive backwards *slowly* for four seconds
         intake.set(ControlMode.PercentOutput, 0); // 1
         driveLeftA.set(-speed);
         driveLeftB.set(-speed);
@@ -148,16 +149,19 @@ public class Robot extends TimedRobot {
       climbStartTime = Timer.getFPGATimestamp();
       if (!toggleLimit) {
         // Current state is false so turn on
-        // limit = Constants.DriveConstants.CLIMB_LIMIT;
-        if((Timer.getFPGATimestamp() - climbStartTime) < 0.2) {
+        if((Timer.getFPGATimestamp() - climbStartTime) < 0.35) {
           arm.set(armTravel);
+          armTravelFlag = true;
+        }
+        if(armTravelFlag) {
+          arm.set(armHoldUp);
         }
         toggleLimit = true;
       } else {
         // Current state is true so turn off
-        // limit = Constants.DriveConstants.SPEED_LIMIT;
-          arm.set(-0.4);
+          arm.set(-armTimeDown);
           toggleLimit = false;
+          armTravelFlag = false;
         }
     }
 
@@ -204,7 +208,7 @@ public class Robot extends TimedRobot {
     }
     else{
       if(Timer.getFPGATimestamp() - lastBurstTime < armTimeDown){
-        arm.set(-0.4);
+        arm.set(armTimeDown);
       }
       else{
         arm.set(-armHoldDown);
