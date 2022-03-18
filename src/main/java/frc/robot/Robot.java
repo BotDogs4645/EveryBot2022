@@ -116,7 +116,7 @@ public class Robot extends TimedRobot {
       if(autoTimeElapsed < 3){
         //spit out the ball for three seconds
         intake.set(ControlMode.PercentOutput, 1); // U N A B S O R B 
-      }else if(autoTimeElapsed < 6){
+      }else if(autoTimeElapsed < 5){
         //stop spitting out the ball and drive backwards *slowly* for two seconds
         intake.set(ControlMode.PercentOutput, 0); // 1
         driveLeftA.set(-speed);
