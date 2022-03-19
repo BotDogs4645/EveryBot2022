@@ -35,7 +35,7 @@ public class Robot extends TimedRobot {
   double limit;
 
   //Constants for controlling the arm. consider tuning these for your particular robot
-  static double armHoldUp = 0.13; // 0.08
+  double armHoldUp = 0.13; // 0.08
   final double armHoldDown = 0.05; // 0.13
   final double climberArmHold = 0.085; 
   final double armTravel = 0.3; //0.4 too slow 
