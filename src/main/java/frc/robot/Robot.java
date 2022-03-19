@@ -3,6 +3,7 @@ package frc.robot;
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.VictorSPXControlMode;
 import com.ctre.phoenix.motorcontrol.can.VictorSPX;
+import com.fasterxml.jackson.databind.jsontype.impl.ClassNameIdResolver;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMax.IdleMode;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
@@ -36,10 +37,12 @@ public class Robot extends TimedRobot {
   //Constants for controlling the arm. consider tuning these for your particular robot
   static double armHoldUp = 0.13; // 0.08
   final double armHoldDown = 0.05; // 0.13
-  final double armTravel = 0.25; //0.4 too slow 
+  final double climberArmHold = 0.085; 
+  final double armTravel = 0.3; //0.4 too slow 
 
   final double armTimeUp = 0.5;
   final double armTimeDown = 0.35;
+
 
   //Variables needed for the code
   boolean climberArm = false; // changes when button is pressed (for climbing)
@@ -48,6 +51,7 @@ public class Robot extends TimedRobot {
   boolean armTravelFlag = false;
   double lastBurstTime = 0;
   double climbStartTime = 0;
+  double lastClimbTime = 0;
 
   double autoStart = 0;
   boolean goForAuto = true;
@@ -119,24 +123,38 @@ public class Robot extends TimedRobot {
   /** This function is called once when teleop is enabled. */
   @Override
   public void teleopInit() {
-    armHoldUp = 0.11;
+    
   }
 
   /** This function is called periodically during operator control. */
   @Override
   public void teleopPeriodic() {
     // CLIMBING:
-    climbStartTime = Timer.getFPGATimestamp();
-    boolean armButton = driverController.getRawButtonPressed(2);
-    if (armButton) {
-      if((climbStartTime - Timer.getFPGATimestamp()) > 0.30) {
-        arm.set(armTravel);
+    if(driverController.getRawButtonPressed(2)) {
+      if(climbStartTime == 0) {
+        climbStartTime = Timer.getFPGATimestamp();
+        SmartDashboard.putNumber("climb start time", climbStartTime);
       }
-      else {
-        arm.set(armHoldUp);
-      }  
+      lastClimbTime = Timer.getFPGATimestamp();
+      SmartDashboard.putNumber("last call", lastClimbTime);
+      if(armUp) {
+        if(lastClimbTime - climbStartTime < 0.2) {
+          arm.set(-armTravel);
+        }
+        else{
+          arm.set(climberArmHold);
+        }
+      }
+      if(!armUp) {
+        if(lastClimbTime - climbStartTime < 0.2) {
+          arm.set(armTravel);
+        }
+        else{
+          arm.set(climberArmHold);
+        }
+      }
     }
-
+    
     SmartDashboard.putBoolean("toggle", climberArm);
     SmartDashboard.putNumber("limit", limit); 
 
@@ -172,7 +190,7 @@ public class Robot extends TimedRobot {
     //Arm Controls
     if(armUp){
       if(Timer.getFPGATimestamp() - lastBurstTime < armTimeUp){
-        arm.set(armTravel);
+        arm.set(-armTravel);
       }
       else{
         arm.set(armHoldUp);
@@ -180,10 +198,10 @@ public class Robot extends TimedRobot {
     }
     else{
       if(Timer.getFPGATimestamp() - lastBurstTime < armTimeDown){
-        arm.set(armTimeDown);
+        arm.set(armTravel);
       }
       else{
-        arm.set(-armHoldDown);
+        arm.set(armHoldDown);
       }
     }
   
