@@ -10,11 +10,11 @@ public final class Constants {
     public static final class ButtonConstants {
         // INTAKE
         public static final int INTAKE_ABSORB = 3;
-        public static final int INTAKE_UNABSORB = 2;
+        public static final int INTAKE_UNABSORB = 1;
 
         // ARM
         public static final int ARM_UP = 4;
-        public static final int ARM_DOWN = 1;
+        public static final int ARM_DOWN = 2;
 
 
     }

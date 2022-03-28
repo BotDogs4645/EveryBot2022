@@ -7,6 +7,11 @@ import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMax.IdleMode;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 
+import edu.wpi.first.cameraserver.CameraServer;
+import edu.wpi.first.cscore.CvSink;
+import edu.wpi.first.cscore.CvSource;
+import edu.wpi.first.cscore.MjpegServer;
+import edu.wpi.first.cscore.UsbCamera;
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.TimedRobot;
@@ -32,12 +37,13 @@ public class Robot extends TimedRobot {
   double speed;
 
   //Constants for controlling the arm. consider tuning these for your particular robot
-  final double armHoldUp = 0.14;
-  final double armHoldDown = 0.05;
-  final double armTravel = 0.5;
+  double armHoldUp = 0.14;
+  double armHoldDown = 0.04; // .04
+  double armTravel = 0.4;
 
-  final double armTimeUp = 0.4;
-  final double armTimeDown = 0.4;
+  double armTimeUp = 0.4;
+  double armTimeDown = 0.4;
+  double armTravelDown = -0.35;
 
   //Varibles needed for the code
   boolean armUp = true; //Arm initialized to up because that's how it would start a match
@@ -62,6 +68,8 @@ public class Robot extends TimedRobot {
     arm.setInverted(false);
     arm.setIdleMode(IdleMode.kBrake);
     arm.burnFlash();
+    UsbCamera camera = new UsbCamera("dave", "/dev/video0");
+    CameraServer.startAutomaticCapture(camera);
 
     //add a thing on the dashboard to turn off auto if needed
     SmartDashboard.putBoolean("Go For Auto", true);
@@ -80,6 +88,7 @@ public class Robot extends TimedRobot {
   @Override
   public void autonomousPeriodic() {
     //arm control code. same as in teleop
+
     if(armUp){
       if(Timer.getFPGATimestamp() - lastBurstTime < armTimeUp){
         arm.set(armTravel);
@@ -127,14 +136,21 @@ public class Robot extends TimedRobot {
 
   /** This function is called once when teleop is enabled. */
   @Override
-  public void teleopInit() {}
+  public void teleopInit() {
+    SmartDashboard.putNumber("travelUp", armTravel);
+    SmartDashboard.putNumber("upHold", armHoldUp);
+    SmartDashboard.putNumber("travelDown", armTravelDown);
+    SmartDashboard.putNumber("holdDown", armHoldDown);
+    SmartDashboard.putNumber("timeUp", armTimeUp);
+    SmartDashboard.putNumber("timeDown", armTimeDown);
+  }
 
   /** This function is called periodically during operator control. */
   @Override
   public void teleopPeriodic() {
     //Set up arcade steer
     double forward = -driverController.getY() * 0.8;
-    double turn = -driverController.getZ() * 0.8;
+    double turn = -driverController.getZ() * 0.5;
     
     double driveLeftPower = (forward - turn);
     double driveRightPower = (forward + turn);
@@ -161,6 +177,13 @@ public class Robot extends TimedRobot {
       intake.set(VictorSPXControlMode.PercentOutput, 0);
     }
 
+    armTravel = SmartDashboard.getNumber("travelUp", armTravel);
+    armHoldUp = SmartDashboard.getNumber("upHold", armHoldUp);
+    armTravelDown = SmartDashboard.getNumber("travelDown", armTravelDown);
+    armHoldDown = SmartDashboard.getNumber("holdDown", armHoldDown);
+
+    armTimeDown = SmartDashboard.getNumber("armTimeDown", armTimeDown);
+    armTimeUp = SmartDashboard.getNumber("armTimeUp", armTimeUp);
     //Arm Controls
     if(armUp){
       if(Timer.getFPGATimestamp() - lastBurstTime < armTimeUp){
@@ -172,7 +195,7 @@ public class Robot extends TimedRobot {
     }
     else{
       if(Timer.getFPGATimestamp() - lastBurstTime < armTimeDown){
-        arm.set(0.075);
+        arm.set(armTravelDown);
       }
       else{
         arm.set(-armHoldDown);
