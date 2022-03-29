@@ -12,6 +12,7 @@ import edu.wpi.first.cscore.CvSink;
 import edu.wpi.first.cscore.CvSource;
 import edu.wpi.first.cscore.MjpegServer;
 import edu.wpi.first.cscore.UsbCamera;
+import edu.wpi.first.cscore.VideoMode;
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.TimedRobot;
@@ -49,6 +50,7 @@ public class Robot extends TimedRobot {
   boolean armUp = true; //Arm initialized to up because that's how it would start a match
   boolean burstMode = false;
   double lastBurstTime = 0;
+  UsbCamera driverVision;
 
   double autoStart = 0;
   boolean goForAuto = true;
@@ -68,9 +70,10 @@ public class Robot extends TimedRobot {
     arm.setInverted(false);
     arm.setIdleMode(IdleMode.kBrake);
     arm.burnFlash();
-    UsbCamera camera = new UsbCamera("dave", "/dev/video0");
-    CameraServer.startAutomaticCapture(camera);
-
+    
+    driverVision = CameraServer.startAutomaticCapture();
+    driverVision.setResolution(320, 240);
+    driverVision.setFPS(-1);
     //add a thing on the dashboard to turn off auto if needed
     SmartDashboard.putBoolean("Go For Auto", true);
     goForAuto = SmartDashboard.getBoolean("Go For Auto", true);
@@ -111,12 +114,12 @@ public class Robot extends TimedRobot {
     
     speed = Constants.DriveConstants.SPEED;
 
-    if(goForAuto){
+    if(goForAuto) {
       //series of timed events making up the flow of auto
-      if(autoTimeElapsed < 3){
+      if(autoTimeElapsed < 3) {
         //spit out the ball for three seconds
         intake.set(ControlMode.PercentOutput, -1); // U N A B S O R B
-      }else if(autoTimeElapsed < 6){
+      } else if(autoTimeElapsed < 6) {
         //stop spitting out the ball and drive backwards *slowly* for three seconds
         intake.set(ControlMode.PercentOutput, 0);
         driveLeftA.set(-speed);
@@ -185,8 +188,8 @@ public class Robot extends TimedRobot {
     armTimeDown = SmartDashboard.getNumber("armTimeDown", armTimeDown);
     armTimeUp = SmartDashboard.getNumber("armTimeUp", armTimeUp);
     //Arm Controls
-    if(armUp){
-      if(Timer.getFPGATimestamp() - lastBurstTime < armTimeUp){
+    if(armUp) {
+      if(Timer.getFPGATimestamp() - lastBurstTime < armTimeUp) {
         arm.set(armTravel);
       }
       else{
@@ -194,7 +197,7 @@ public class Robot extends TimedRobot {
       }
     }
     else{
-      if(Timer.getFPGATimestamp() - lastBurstTime < armTimeDown){
+      if(Timer.getFPGATimestamp() - lastBurstTime < armTimeDown) {
         arm.set(armTravelDown);
       }
       else{
@@ -207,7 +210,7 @@ public class Robot extends TimedRobot {
       armUp = true;
       SmartDashboard.putBoolean("arm up", armUp);
     }
-    else if(buttonController.getRawButtonPressed(Constants.ButtonConstants.ARM_DOWN) && armUp) { // ARM DOWN
+    else if(buttonController.getRawButtonPressed(Constants.ButtonConstants.ARM_DOWN) && armUp)  { // ARM DOWN
       lastBurstTime = Timer.getFPGATimestamp();
       armUp = false;
       SmartDashboard.putBoolean("arm up", armUp);
